@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | TrueCompanion</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+        }
+        header {
+            background: #4CAF50;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+        nav {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+        nav a {
+            color: white;
+            text-decoration: none;
+        }
+        main {
+            padding: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .posts {
+            margin: 2rem 0;
+        }
+        .post {
+            border: 1px solid #ddd;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+            background: white;
+        }
+        .create-post {
+            border: 1px solid #ddd;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+            background: white;
+        }
+        textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        footer {
+            text-align: center;
+            padding: 1rem;
+            background: #333;
+            color: white;
+        }
+        .chat-requests {
+    margin: 2rem 0;
+    border: 1px solid #ddd;
+    padding: 1rem;
+    border-radius: 4px;
+    background: white;
+}
+
+.chat-request {
+    border: 1px solid #ddd;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chat-request button {
+    padding: 0.25rem 0.5rem;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1>TrueCompanion</h1>
+        <nav>
+            <a href="profile.html">Profile</a>
+            <a href="chat.html">Chat</a>
+            <a href="index.html" id="logoutBtn">Logout</a>
+        </nav>
+    </header>
+    <main>
+        <section class="posts">
+            <h2>Recent Posts</h2>
+            <div id="postsList"></div>
+        </section>
+        <section class="create-post">
+            <h2>Create a Post</h2>
+            <form id="createPostForm">
+                <textarea id="postContent" placeholder="Share your thoughts or ask for support..." required></textarea>
+                <button type="submit" class="btn">Post</button>
+            </form>
+        </div>
+        <section class="chat-requests">
+    <h2>Pending Chat Requests</h2>
+    <div id="chatRequestsList"></div>
+</section>
+
+    </main>
+    <footer>
+        <p>© 2026 TrueCompanion. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Check if user is logged in
+        const username = localStorage.getItem('username');
+        if (!username) {
+            window.location.href = 'login.html';
+        }
+
+        // Logout functionality
+        document.getElementById('logoutBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            localStorage.removeItem('username');
+            localStorage.removeItem('password');
+            window.location.href = 'index.html';
+        });
+
+        // Load posts from localStorage
+        const posts = JSON.parse(localStorage.getItem('posts')) || [];
+        const postsList = document.getElementById('postsList');
+
+        // Display posts
+        posts.forEach(post => {
+            const postElement = document.createElement('div');
+            postElement.className = 'post';
+            postElement.innerHTML = `
+                <p>${post.content}</p>
+                <p>Posted by: ${post.username}</p>
+                <button class="btn" onclick="requestChat('${post.username}')">Request Chat</button>
+            `;
+            postsList.appendChild(postElement);
+        });
+
+        // Create a new post
+        document.getElementById('createPostForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const postContent = document.getElementById('postContent').value;
+            const newPost = {
+                content: postContent,
+                username: username,
+                timestamp: new Date().toISOString()
+            };
+            posts.push(newPost);
+            localStorage.setItem('posts', JSON.stringify(posts));
+            document.getElementById('postContent').value = '';
+
+            // Refresh posts
+            postsList.innerHTML = '';
+            posts.forEach(post => {
+                const postElement = document.createElement('div');
+                postElement.className = 'post';
+                postElement.innerHTML = `
+                    <p>${post.content}</p>
+                    <p>Posted by: ${post.username}</p>
+                    <button class="btn" onclick="requestChat('${post.username}')">Request Chat</button>
+                `;
+                postsList.appendChild(postElement);
+            });
+        });
+        // Function to display chat requests
+function displayChatRequests() {
+    const chatRequestsList = document.getElementById('chatRequestsList');
+    chatRequestsList.innerHTML = '';
+
+    // Load chat requests from localStorage
+    const chatRequests = JSON.parse(localStorage.getItem('chatRequests')) || [];
+
+    // Display each request
+    chatRequests.forEach((request, index) => {
+        const requestElement = document.createElement('div');
+        requestElement.className = 'chat-request';
+        requestElement.innerHTML = `
+            <p><strong>${request.requester}</strong> wants to chat with you.</p>
+            <button onclick="approveChatRequest(${index})">Approve</button>
+        `;
+        chatRequestsList.appendChild(requestElement);
+    });
+}
+
+// Function to approve a chat request
+function approveChatRequest(index) {
+    const chatRequests = JSON.parse(localStorage.getItem('chatRequests')) || [];
+    const approvedRequest = chatRequests[index];
+
+    // Remove the request from the list
+    chatRequests.splice(index, 1);
+    localStorage.setItem('chatRequests', JSON.stringify(chatRequests));
+
+    // Redirect to chat.html
+    window.location.href = `chat.html?user=${approvedRequest.requester}`;
+}
+
+// Call this function when the page loads
+displayChatRequests();
+function requestChat(username) {
+    alert(`Chat request sent to ${username}!`);
+
+    // Store the chat request in localStorage
+    const chatRequests = JSON.parse(localStorage.getItem('chatRequests')) || [];
+    chatRequests.push({
+        requester: localStorage.getItem('username'),
+        requestedUser: username
+    });
+    localStorage.setItem('chatRequests', JSON.stringify(chatRequests));
+
+    // Refresh the chat requests list
+    displayChatRequests();
+}
+
+
+    </script>
+</body>
+</html>
